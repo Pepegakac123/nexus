@@ -29,3 +29,22 @@ func (o *Orchestrator) ListContainers(ctx context.Context) (client.ContainerList
 	}
 	return result, nil
 }
+
+func (o *Orchestrator) InspectContainer(ctx context.Context, id string) (client.ContainerInspectResult, error) {
+	result, err := o.client.ContainerInspect(ctx, id, client.ContainerInspectOptions{})
+	if err != nil {
+		return client.ContainerInspectResult{}, err
+	}
+	return result, nil
+}
+
+func (o *Orchestrator) Worker(ctx context.Context, jobs <-chan string, results chan<- client.ContainerInspectResult) {
+	for id := range jobs {
+		result, err := o.InspectContainer(ctx, id)
+		if err != nil {
+			results <- client.ContainerInspectResult{}
+		} else {
+			results <- result
+		}
+	}
+}
